@@ -20,9 +20,10 @@ const Navigation = () => {
               <div key={deg} className="logo-star" style={{ transform: `rotate(${deg}deg) translateY(-22px)` }}></div>
             ))}
           </div>
-          <h1 className="logo-title">
-            MATCHVIBE
-          </h1>
+          <div className="logo-title-group">
+            <h1 className="logo-title">MATCHVIBE</h1>
+            <div className="logo-subtext">AMATEUR SOCCER MATCHING</div>
+          </div>
         </Link>
 
         <ul className="nav-menu">
