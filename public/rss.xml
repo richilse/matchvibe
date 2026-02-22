@@ -2,34 +2,34 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>MATCHVIBE | 아마추어 축구 및 풋살 매칭 플랫폼</title>
-    <link>https://matchvibe-soccermatching.netlify.app/</link>
+    <link>https://matchvibe.netlify.app/</link>
     <description>대한민국 No.1 아마추어 축구 및 풋살 매칭 전용 플랫폼 MATCHVIBE입니다. 실력과 지역에 맞는 최적의 매칭을 경험하세요.</description>
     <language>ko-kr</language>
     <lastBuildDate>Sun, 22 Feb 2026 10:43:00 +0900</lastBuildDate>
-    <atom:link href="https://matchvibe-soccermatching.netlify.app/rss.xml" rel="self" type="application/rss+xml" />
+    <atom:link href="https://matchvibe.netlify.app/rss.xml" rel="self" type="application/rss+xml" />
     
     <item>
       <title>MATCHVIBE 서비스 런칭</title>
-      <link>https://matchvibe-soccermatching.netlify.app/</link>
+      <link>https://matchvibe.netlify.app/</link>
       <description>아마추어 축구팀을 위한 최적의 매칭 서비스가 시작되었습니다. 지금 바로 팀을 등록하고 경기를 잡아보세요!</description>
       <pubDate>Sun, 22 Feb 2026 10:00:00 +0900</pubDate>
-      <guid>https://matchvibe-soccermatching.netlify.app/#intro</guid>
+      <guid>https://matchvibe.netlify.app/#intro</guid>
     </item>
     
     <item>
       <title>우리 팀 등록하기</title>
-      <link>https://matchvibe-soccermatching.netlify.app/register</link>
+      <link>https://matchvibe.netlify.app/register</link>
       <description>간편한 절차로 우리 팀을 등록하고 활동 지역을 설정하세요.</description>
       <pubDate>Sun, 22 Feb 2026 10:00:00 +0900</pubDate>
-      <guid>https://matchvibe-soccermatching.netlify.app/register</guid>
+      <guid>https://matchvibe.netlify.app/register</guid>
     </item>
 
     <item>
       <title>매칭 상대 찾기</title>
-      <link>https://matchvibe-soccermatching.netlify.app/matches</link>
+      <link>https://matchvibe.netlify.app/matches</link>
       <description>지역별, 실력별로 최적화된 상대 팀을 검색하고 실시간으로 매칭을 신청하세요.</description>
       <pubDate>Sun, 22 Feb 2026 10:00:00 +0900</pubDate>
-      <guid>https://matchvibe-soccermatching.netlify.app/matches</guid>
+      <guid>https://matchvibe.netlify.app/matches</guid>
     </item>
   </channel>
 </rss>
