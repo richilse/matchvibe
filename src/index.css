@@ -492,6 +492,53 @@ label {
   line-height: 1.6;
 }
 
+/* ===== SEO Section ===== */
+.seo-section {
+  width: 100%;
+  max-width: 1100px;
+  margin-top: 80px;
+  padding: 40px 0 20px 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.seo-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 30px;
+}
+
+.seo-block h2 {
+  font-size: 1rem !important;
+  font-weight: 700;
+  color: var(--secondary);
+  margin-bottom: 12px;
+  letter-spacing: 0;
+}
+
+.seo-block p {
+  font-size: 0.82rem !important;
+  color: var(--text-muted);
+  line-height: 1.75;
+  padding: 0 !important;
+}
+
+.seo-block strong {
+  color: rgba(255, 255, 255, 0.6);
+  font-weight: 600;
+}
+
+@media (max-width: 768px) {
+  .seo-grid {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+
+  .seo-section {
+    margin-top: 50px;
+    padding: 24px 0 10px 0;
+  }
+}
+
 /* ===== Register Page Layout Classes ===== */
 .register-card {
   padding: 40px;
