@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-
+import { Trash2 } from 'lucide-react';
 import { REGIONS_DATA } from '../constants/regions';
 import { supabase } from '../lib/supabaseClient';
+import { useAuth } from '../context/AuthContext';
 
 const MatchFinder = () => {
-    const [teams, setTeams] = useState([]); // Real teams from localStorage
+    const { user, isAdmin } = useAuth();
+    const [teams, setTeams] = useState([]);
     const [filter, setFilter] = useState({
         city: '전체',
         district: '전체',
@@ -79,6 +81,21 @@ const MatchFinder = () => {
             }, 500);
         }
     };
+
+    const handleDeleteTeam = async (team) => {
+        const confirmed = window.confirm(`"${team.name}" 팀을 삭제하시겠습니까?\n이 작업은 되돌릴 수 없습니다.`);
+        if (!confirmed) return;
+
+        const { error } = await supabase.from('teams').delete().eq('id', team.id);
+        if (error) {
+            alert('삭제 중 오류가 발생했습니다: ' + error.message);
+        } else {
+            setTeams(prev => prev.filter(t => t.id !== team.id));
+            if (selectedTeam?.id === team.id) setSelectedTeam(null);
+        }
+    };
+
+    const canDelete = (team) => isAdmin || (user && team.user_id === user.id);
 
     return (
         <div style={{ padding: '20px 0', position: 'relative' }}>
@@ -245,7 +262,7 @@ const MatchFinder = () => {
                                     "{team.intro}"
                                 </p>
 
-                                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                                <div style={{ display: 'grid', gridTemplateColumns: canDelete(team) ? '1fr 1fr auto' : '1fr 1fr', gap: '10px' }}>
                                     <button
                                         className="btn-outline"
                                         style={{ padding: '12px' }}
@@ -261,6 +278,16 @@ const MatchFinder = () => {
                                     >
                                         {matchingRequested === team.id ? '신청 대기' : '매칭 신청'}
                                     </button>
+                                    {canDelete(team) && (
+                                        <button
+                                            className="btn-delete"
+                                            style={{ padding: '12px 14px' }}
+                                            onClick={() => handleDeleteTeam(team)}
+                                            title="팀 삭제"
+                                        >
+                                            <Trash2 size={16} />
+                                        </button>
+                                    )}
                                 </div>
                             </motion.div>
                         ))

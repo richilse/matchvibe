@@ -2,11 +2,13 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { REGIONS_DATA } from '../constants/regions';
 import { supabase } from '../lib/supabaseClient';
+import { useAuth } from '../context/AuthContext';
 
 const Register = () => {
+    const { user } = useAuth();
     const [formData, setFormData] = useState({
         teamName: '',
-        matchType: 'soccer', // 'soccer' or 'futsal'
+        matchType: 'soccer',
         hasField: 'false',
         address: '',
         proPlayers: '0',
@@ -15,7 +17,10 @@ const Register = () => {
         contact: '',
         dong: '역삼동',
         foundationYear: new Date().getFullYear(),
-        profileImage: null
+        profileImage: null,
+        email: '',
+        password: '',
+        passwordConfirm: ''
     });
 
     const currentRegion = `${formData.city} ${formData.district === '전체' ? '' : formData.district} ${formData.dong === '전체' ? '' : formData.dong}`.trim();
@@ -60,7 +65,7 @@ const Register = () => {
     };
 
     const handleAddressSearch = () => {
-        new window.daum.Postcode({
+        const popup = new window.daum.Postcode({
             oncomplete: function (data) {
                 let fullAddress = data.address;
                 let extraAddress = '';
@@ -78,52 +83,83 @@ const Register = () => {
                     district: data.sigungu,
                     dong: data.bname || data.bname1 || data.bname2
                 }));
-            }
-        }).open();
+            },
+            width: '100%',
+            height: '100%',
+        });
+
+        // 모바일 환경에서는 팝업 대신 레이어 방식 사용
+        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        if (isMobile) {
+            popup.embed(document.getElementById('daumPostcodeLayer'), { autoClose: true });
+            document.getElementById('daumPostcodeLayer').style.display = 'block';
+        } else {
+            popup.open();
+        }
+    };
+
+    const closeDaumLayer = () => {
+        document.getElementById('daumPostcodeLayer').style.display = 'none';
     };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
 
+        // 비밀번호 확인
+        if (!user && formData.password !== formData.passwordConfirm) {
+            alert('비밀번호가 일치하지 않습니다.');
+            return;
+        }
+
         const region = `${formData.city} ${formData.district === '전체' ? '' : formData.district} ${formData.dong === '전체' ? '' : formData.dong}`.trim();
 
-        // 1. Prepare team data for Supabase
-        const newTeam = {
-            name: formData.teamName,
-            match_type: formData.matchType,
-            has_field: formData.hasField === 'true',
-            address: formData.address || '-',
-            city: formData.city,
-            district: formData.district,
-            dong: formData.dong,
-            pro_players: parseInt(formData.proPlayers),
-            skill_level: formData.skillLevel,
-            intro: formData.introduction,
-            contact: formData.contact,
-            foundation_year: parseInt(formData.foundationYear),
-            profile_image: formData.profileImage,
-            region: region,
-            member_count: 20
-        };
-
         try {
-            // 2. Save to Supabase
-            const { error } = await supabase
-                .from('teams')
-                .insert([newTeam]);
+            let userId = user?.id;
 
-            if (error) throw error;
+            // 1. 비로그인 상태 → 회원가입 처리
+            if (!user) {
+                const { data: authData, error: authError } = await supabase.auth.signUp({
+                    email: formData.email,
+                    password: formData.password
+                });
+                if (authError) {
+                    if (authError.message?.includes('already registered') || authError.message?.includes('already been registered')) {
+                        throw new Error('이미 가입된 이메일입니다. 로그인 후 팀을 등록해 주세요.');
+                    }
+                    throw new Error(authError.message || '계정 생성 중 오류가 발생했습니다.');
+                }
+                userId = authData.user?.id;
+            }
 
-            // 3. Save individual team info for "My Team" linkage (keep local for UX)
+            // 2. 팀 데이터 저장
+            const newTeam = {
+                name: formData.teamName,
+                match_type: formData.matchType,
+                has_field: formData.hasField === 'true',
+                address: formData.address || '-',
+                city: formData.city,
+                district: formData.district,
+                dong: formData.dong,
+                pro_players: parseInt(formData.proPlayers),
+                skill_level: formData.skillLevel,
+                intro: formData.introduction,
+                contact: formData.contact,
+                foundation_year: parseInt(formData.foundationYear),
+                profile_image: formData.profileImage,
+                region: region,
+                member_count: 20,
+                user_id: userId
+            };
+
+            const { error: teamError } = await supabase.from('teams').insert([newTeam]);
+            if (teamError) throw teamError;
+
             localStorage.setItem('myTeamInfo', JSON.stringify({ ...newTeam, id: Date.now() }));
-
             alert(`팀 등록이 완료되었습니다!\n이제 '매칭 신청' 페이지에서 우리 팀을 확인할 수 있습니다.`);
-
-            // Redirect to matches page
             window.location.href = '/matches';
         } catch (error) {
-            console.error('Error registering team:', error.message);
-            alert('팀 등록 중 오류가 발생했습니다: ' + error.message);
+            console.error('Error:', error.message);
+            alert('오류가 발생했습니다: ' + error.message);
         }
     };
 
@@ -131,28 +167,54 @@ const Register = () => {
         <motion.div
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
-            className="glass-card"
-            style={{ padding: '40px', maxWidth: '850px', margin: '40px auto' }}
+            className="glass-card register-card"
         >
             <h2 style={{ fontSize: '2rem', marginBottom: '30px', textAlign: 'center' }}>
                 <span style={{ color: 'var(--accent)' }}>팀 등록</span>하기
             </h2>
 
             <form onSubmit={handleSubmit}>
-                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '30px' }}>
-                    <div style={{ gridColumn: 'span 2' }}>
+                {/* 주소검색 모바일 레이어 */}
+                <div
+                    id="daumPostcodeLayer"
+                    style={{
+                        display: 'none',
+                        position: 'fixed',
+                        top: 0,
+                        left: 0,
+                        width: '100%',
+                        height: '100%',
+                        zIndex: 9999,
+                        background: 'rgba(0,0,0,0.85)'
+                    }}
+                >
+                    <button
+                        type="button"
+                        onClick={closeDaumLayer}
+                        style={{
+                            position: 'absolute',
+                            top: '10px',
+                            right: '10px',
+                            background: 'rgba(255,255,255,0.15)',
+                            border: 'none',
+                            color: 'white',
+                            fontSize: '1.5rem',
+                            width: '40px',
+                            height: '40px',
+                            borderRadius: '50%',
+                            cursor: 'pointer',
+                            zIndex: 10000
+                        }}
+                    >✕</button>
+                </div>
+
+                <div className="register-grid">
+                    <div className="register-col-2">
                         <label style={{ marginBottom: '15px', display: 'block' }}>선호 매칭 유형 선택</label>
-                        <div style={{ display: 'flex', gap: '20px' }}>
-                            <label className="glass-card" style={{
-                                flex: 1,
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '10px',
-                                padding: '15px',
-                                cursor: 'pointer',
+                        <div className="match-type-row">
+                            <label className="glass-card match-type-card" style={{
                                 background: formData.matchType === 'soccer' ? 'rgba(52, 152, 219, 0.2)' : 'rgba(255,255,255,0.05)',
                                 borderColor: formData.matchType === 'soccer' ? 'var(--accent)' : 'rgba(255,255,255,0.1)',
-                                transition: 'all 0.3s ease'
                             }}>
                                 <input
                                     type="radio"
@@ -167,16 +229,9 @@ const Register = () => {
                                     <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>11:11 / 8:8 대형 경기 위주</div>
                                 </div>
                             </label>
-                            <label className="glass-card" style={{
-                                flex: 1,
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '10px',
-                                padding: '15px',
-                                cursor: 'pointer',
+                            <label className="glass-card match-type-card" style={{
                                 background: formData.matchType === 'futsal' ? 'rgba(52, 152, 219, 0.2)' : 'rgba(255,255,255,0.05)',
                                 borderColor: formData.matchType === 'futsal' ? 'var(--accent)' : 'rgba(255,255,255,0.1)',
-                                transition: 'all 0.3s ease'
                             }}>
                                 <input
                                     type="radio"
@@ -217,7 +272,7 @@ const Register = () => {
                         </select>
                     </div>
 
-                    <div style={{ gridColumn: 'span 2' }}>
+                    <div className="register-col-2">
                         <label>팀 대표 사진 (선택사항)</label>
                         <div
                             className="glass-card"
@@ -266,9 +321,9 @@ const Register = () => {
                     </div>
 
                     {formData.hasField === 'true' ? (
-                        <div style={{ gridColumn: 'span 2' }}>
+                        <div className="register-col-2">
                             <label>구장 위치 (주소)</label>
-                            <div style={{ display: 'flex', gap: '10px' }}>
+                            <div className="address-row">
                                 <input
                                     type="text"
                                     placeholder="주소 검색 버튼을 눌러주세요"
@@ -290,41 +345,43 @@ const Register = () => {
                             </p>
                         </div>
                     ) : (
-                        <div style={{ gridColumn: 'span 2', display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '15px' }}>
-                            <div style={{ gridColumn: 'span 3' }}>
-                                <label>주 활동 지역 (시/군/구/동)</label>
-                            </div>
-                            <div>
-                                <select
-                                    value={formData.city}
-                                    onChange={(e) => setFormData(prev => ({ ...prev, city: e.target.value, district: '전체', dong: '전체' }))}
-                                >
-                                    {Object.keys(REGIONS_DATA).map(city => (
-                                        <option key={city} value={city}>{city}</option>
-                                    ))}
-                                </select>
-                            </div>
-                            <div>
-                                <select
-                                    value={formData.district}
-                                    onChange={(e) => setFormData(prev => ({ ...prev, district: e.target.value, dong: '전체' }))}
-                                >
-                                    <option value="전체">전체 시/군/구</option>
-                                    {REGIONS_DATA[formData.city] && Object.keys(REGIONS_DATA[formData.city]).map(dist => (
-                                        <option key={dist} value={dist}>{dist}</option>
-                                    ))}
-                                </select>
-                            </div>
-                            <div>
-                                <select
-                                    value={formData.dong}
-                                    onChange={(e) => setFormData(prev => ({ ...prev, dong: e.target.value }))}
-                                >
-                                    <option value="전체">전체 읍/면/동</option>
-                                    {REGIONS_DATA[formData.city] && REGIONS_DATA[formData.city][formData.district] && REGIONS_DATA[formData.city][formData.district].map(dong => (
-                                        <option key={dong} value={dong}>{dong}</option>
-                                    ))}
-                                </select>
+                        <div className="register-col-2">
+                            <div className="region-grid">
+                                <div style={{ gridColumn: 'span 3' }}>
+                                    <label>주 활동 지역 (시/군/구/동)</label>
+                                </div>
+                                <div>
+                                    <select
+                                        value={formData.city}
+                                        onChange={(e) => setFormData(prev => ({ ...prev, city: e.target.value, district: '전체', dong: '전체' }))}
+                                    >
+                                        {Object.keys(REGIONS_DATA).map(city => (
+                                            <option key={city} value={city}>{city}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                                <div>
+                                    <select
+                                        value={formData.district}
+                                        onChange={(e) => setFormData(prev => ({ ...prev, district: e.target.value, dong: '전체' }))}
+                                    >
+                                        <option value="전체">전체 시/군/구</option>
+                                        {REGIONS_DATA[formData.city] && Object.keys(REGIONS_DATA[formData.city]).map(dist => (
+                                            <option key={dist} value={dist}>{dist}</option>
+                                        ))}
+                                    </select>
+                                </div>
+                                <div>
+                                    <select
+                                        value={formData.dong}
+                                        onChange={(e) => setFormData(prev => ({ ...prev, dong: e.target.value }))}
+                                    >
+                                        <option value="전체">전체 읍/면/동</option>
+                                        {REGIONS_DATA[formData.city] && REGIONS_DATA[formData.city][formData.district] && REGIONS_DATA[formData.city][formData.district].map(dong => (
+                                            <option key={dong} value={dong}>{dong}</option>
+                                        ))}
+                                    </select>
+                                </div>
                             </div>
                         </div>
                     )}
@@ -353,7 +410,7 @@ const Register = () => {
                         </select>
                     </div>
 
-                    <div style={{ gridColumn: 'span 2' }}>
+                    <div className="register-col-2">
                         <label>연락처 (대표번호)</label>
                         <input
                             type="tel"
@@ -364,7 +421,7 @@ const Register = () => {
                         />
                     </div>
 
-                    <div style={{ gridColumn: 'span 2' }}>
+                    <div className="register-col-2">
                         <label>팀 소개</label>
                         <div style={{ marginBottom: '10px', display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
                             {autoPhrases.map((phrase, idx) => (
@@ -387,6 +444,71 @@ const Register = () => {
                             required
                         ></textarea>
                     </div>
+
+                    {/* 계정 생성 섹션 (비로그인 상태일 때만 표시) */}
+                    {!user && (
+                        <div className="register-col-2">
+                            <div style={{
+                                borderTop: '1px solid rgba(255,255,255,0.1)',
+                                paddingTop: '30px',
+                                marginTop: '10px'
+                            }}>
+                                <h3 style={{ fontSize: '1.1rem', marginBottom: '5px', color: 'var(--accent)' }}>
+                                    🔐 계정 만들기
+                                </h3>
+                                <p style={{ fontSize: '0.85rem', color: 'var(--text-muted)', marginBottom: '20px' }}>
+                                    팀 등록과 함께 계정을 생성합니다. 이후 로그인하여 내 팀을 관리할 수 있습니다.
+                                </p>
+                                <div className="register-grid">
+                                    <div className="register-col-2">
+                                        <label>이메일 (아이디)</label>
+                                        <input
+                                            type="email"
+                                            placeholder="example@email.com"
+                                            value={formData.email}
+                                            onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                                            required
+                                            autoComplete="email"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label>비밀번호</label>
+                                        <input
+                                            type="password"
+                                            placeholder="8자 이상 입력"
+                                            value={formData.password}
+                                            onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                                            required
+                                            minLength={8}
+                                            autoComplete="new-password"
+                                        />
+                                    </div>
+                                    <div>
+                                        <label>비밀번호 확인</label>
+                                        <input
+                                            type="password"
+                                            placeholder="비밀번호 재입력"
+                                            value={formData.passwordConfirm}
+                                            onChange={(e) => setFormData({ ...formData, passwordConfirm: e.target.value })}
+                                            required
+                                            minLength={8}
+                                            autoComplete="new-password"
+                                            style={{
+                                                borderColor: formData.passwordConfirm && formData.password !== formData.passwordConfirm
+                                                    ? 'rgba(255,80,80,0.6)'
+                                                    : undefined
+                                            }}
+                                        />
+                                        {formData.passwordConfirm && formData.password !== formData.passwordConfirm && (
+                                            <p style={{ fontSize: '0.8rem', color: '#ff8080', marginTop: '5px' }}>
+                                                비밀번호가 일치하지 않습니다.
+                                            </p>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
                 </div>
 
                 <button
@@ -394,7 +516,7 @@ const Register = () => {
                     className="btn-primary"
                     style={{ width: '100%', marginTop: '30px', padding: '18px', fontSize: '1.1rem' }}
                 >
-                    등록 완료
+                    {user ? '팀 등록 완료' : '팀 등록 & 계정 생성'}
                 </button>
             </form>
         </motion.div>
