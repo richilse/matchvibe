@@ -395,7 +395,7 @@ const MyTeam = () => {
                             display: 'flex', alignItems: 'center', justifyContent: 'center',
                             overflow: 'hidden', flexShrink: 0,
                         }}>
-                            {(photoPreview || currentTeam?.photo_url) ? (
+                            {(photoPreview || (currentTeam?.photo_url && !currentTeam.photo_url.startsWith('blob:'))) ? (
                                 <img
                                     src={photoPreview || currentTeam.photo_url}
                                     alt="팀 사진"

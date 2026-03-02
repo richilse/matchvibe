@@ -270,9 +270,15 @@ const MatchFinder = () => {
 
                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '15px' }}>
                                     <div style={{ display: 'flex', gap: '15px', alignItems: 'center' }}>
-                                        {(team.photo_url || team.profile_image) ? (
+                                        {(team.photo_url && !team.photo_url.startsWith('blob:')) ? (
                                             <img
-                                                src={team.photo_url || team.profile_image}
+                                                src={team.photo_url}
+                                                alt={team.name}
+                                                style={{ width: '50px', height: '50px', borderRadius: '50%', objectFit: 'cover', border: '1px solid rgba(255,255,255,0.1)' }}
+                                            />
+                                        ) : (team.profile_image && !team.profile_image.startsWith('blob:')) ? (
+                                            <img
+                                                src={team.profile_image}
                                                 alt={team.name}
                                                 style={{ width: '50px', height: '50px', borderRadius: '50%', objectFit: 'cover', border: '1px solid rgba(255,255,255,0.1)' }}
                                             />
@@ -443,9 +449,15 @@ const MatchFinder = () => {
                                     border: '2px solid rgba(255,255,255,0.1)',
                                     boxShadow: '0 10px 30px rgba(0,0,0,0.5)'
                                 }}>
-                                    {(selectedTeam.photo_url || selectedTeam.profile_image || selectedTeam.profileImage) ? (
+                                    {(selectedTeam.photo_url && !selectedTeam.photo_url.startsWith('blob:')) ? (
                                         <img
-                                            src={selectedTeam.photo_url || selectedTeam.profile_image || selectedTeam.profileImage}
+                                            src={selectedTeam.photo_url}
+                                            alt={selectedTeam.name}
+                                            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                                        />
+                                    ) : (selectedTeam.profile_image && !selectedTeam.profile_image.startsWith('blob:')) ? (
+                                        <img
+                                            src={selectedTeam.profile_image}
                                             alt={selectedTeam.name}
                                             style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                                         />

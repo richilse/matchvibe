@@ -149,29 +149,25 @@ const Register = () => {
                 userId = authData.user?.id;
             }
 
-            // 2. 팀 데이터 저장 (임시로 먼저 생성해서 ID 확보)
-            const tempTeam = {
-                name: formData.name,
-                match_type: formData.match_type,
-                has_field: formData.has_field === 'true',
-                address: formData.address || '-',
-                city: formData.city,
-                district: formData.district,
-                dong: formData.dong,
-                pro_players: parseInt(formData.pro_players),
-                skill_level: formData.skill_level,
-                intro: formData.intro,
-                contact: formData.contact,
-                foundation_year: parseInt(formData.foundation_year),
-                region: region,
-                member_count: 20,
-                user_id: userId,
-                photo_url: null
-            };
-
+            // 2. 팀 데이터 저장
             const { data: teamData, error: teamError } = await supabase
                 .from('teams')
-                .insert([tempTeam])
+                .insert([{
+                    name: formData.name,
+                    match_type: formData.match_type,
+                    has_field: formData.has_field === 'true',
+                    address: formData.address || '-',
+                    city: formData.city,
+                    district: formData.district,
+                    dong: formData.dong,
+                    region: region,
+                    pro_players: parseInt(formData.pro_players),
+                    skill_level: formData.skill_level,
+                    intro: formData.intro,
+                    contact: formData.contact,
+                    foundation_year: parseInt(formData.foundation_year),
+                    user_id: user?.id || null
+                }])
                 .select()
                 .single();
 
