@@ -475,15 +475,15 @@ const MatchFinder = () => {
                             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px', marginBottom: '30px', textAlign: 'center' }}>
                                 <div className="glass-card" style={{ padding: '15px' }}>
                                     <div style={{ color: 'var(--text-muted)', fontSize: '0.8rem', marginBottom: '5px' }}>실력 등급</div>
-                                    <div style={{ fontSize: '1.2rem', fontWeight: 'bold' }}>{selectedTeam.skill_level || selectedTeam.skill}</div>
+                                    <div style={{ fontSize: '1.2rem', fontWeight: 'bold' }}>{selectedTeam.skill_level || '중'}</div>
                                 </div>
                                 <div className="glass-card" style={{ padding: '15px' }}>
                                     <div style={{ color: 'var(--text-muted)', fontSize: '0.8rem', marginBottom: '5px' }}>선출 인원</div>
-                                    <div style={{ fontSize: '1.2rem', fontWeight: 'bold' }}>{selectedTeam.pro_players}명</div>
+                                    <div style={{ fontSize: '1.2rem', fontWeight: 'bold' }}>{selectedTeam.pro_players || 0}명</div>
                                 </div>
                                 <div className="glass-card" style={{ padding: '15px' }}>
                                     <div style={{ color: 'var(--text-muted)', fontSize: '0.8rem', marginBottom: '5px' }}>회원 수</div>
-                                    <div style={{ fontSize: '1.2rem', fontWeight: 'bold' }}>{selectedTeam.memberCount || 20}명</div>
+                                    <div style={{ fontSize: '1.2rem', fontWeight: 'bold' }}>{selectedTeam.member_count || 20}명</div>
                                 </div>
                             </div>
 
