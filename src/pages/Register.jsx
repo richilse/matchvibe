@@ -166,7 +166,7 @@ const Register = () => {
                     intro: formData.intro,
                     contact: formData.contact,
                     foundation_year: parseInt(formData.foundation_year),
-                    user_id: user?.id || null
+                    user_id: userId || null
                 }])
                 .select()
                 .single();
@@ -180,10 +180,8 @@ const Register = () => {
                     .from('teams')
                     .update({ photo_url: photoUrl })
                     .eq('id', teamData.id);
-                tempTeam.photo_url = photoUrl;
             }
 
-            localStorage.setItem('myTeamInfo', JSON.stringify({ ...tempTeam, id: teamData.id }));
             alert(`팀 등록이 완료되었습니다!\n이제 '매칭 신청' 페이지에서 우리 팀을 확인할 수 있습니다.`);
             window.location.href = '/matches';
         } catch (error) {

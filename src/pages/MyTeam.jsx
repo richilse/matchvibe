@@ -359,211 +359,233 @@ const MyTeam = () => {
                     </div>
                 )}
 
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px' }}>
-                    <h2 style={{ fontSize: '2rem' }}>
-                        <span style={{ color: 'var(--accent)' }}>내 팀</span> 정보 수정
-                    </h2>
-                    {saved && (
-                        <motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }}
-                            style={{
-                                background: 'rgba(0, 242, 150, 0.15)', border: '1px solid rgba(0,242,150,0.4)',
-                                borderRadius: '10px', padding: '8px 18px', color: '#00f296', fontWeight: '600', fontSize: '0.9rem'
-                            }}>
-                            ✓ 저장 완료!
-                        </motion.div>
-                    )}
-                </div>
+                {teams.length === 0 && !loading && (
+                    <div style={{ textAlign: 'center', padding: '60px 20px' }}>
+                        <div style={{ fontSize: '4rem', marginBottom: '20px' }}>🏃‍♂️</div>
+                        <h3 style={{ fontSize: '1.5rem', marginBottom: '15px' }}>등록된 팀이 없습니다</h3>
+                        <p style={{ color: 'var(--text-muted)', marginBottom: '30px' }}>
+                            아직 팀을 등록하지 않으셨나요?<br />
+                            팀을 등록하고 매칭 상대를 찾아보세요!
+                        </p>
+                        <button
+                            onClick={() => navigate('/register')}
+                            className="btn-primary"
+                            style={{ margin: '0 auto' }}
+                        >
+                            지금 팀 등록하기
+                        </button>
+                    </div>
+                )}
 
-                {/* 팀 사진 변경 섹션 */}
-                <div style={{
-                    marginBottom: '32px',
-                    padding: '28px',
-                    background: 'rgba(255,255,255,0.03)',
-                    border: '1px solid rgba(255,255,255,0.08)',
-                    borderRadius: '16px',
-                }}>
-                    <h3 style={{ fontSize: '1rem', fontWeight: '700', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-                        <Camera size={18} style={{ color: 'var(--accent)' }} />
-                        팀 사진
-                    </h3>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '28px', flexWrap: 'wrap' }}>
-                        {/* 현재 사진 */}
-                        <div style={{
-                            width: '110px', height: '110px', borderRadius: '50%',
-                            background: 'rgba(255,255,255,0.06)',
-                            border: '2px solid rgba(255,255,255,0.12)',
-                            display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            overflow: 'hidden', flexShrink: 0,
-                        }}>
-                            {(photoPreview || (currentTeam?.photo_url && !currentTeam.photo_url.startsWith('blob:'))) ? (
-                                <img
-                                    src={photoPreview || currentTeam.photo_url}
-                                    alt="팀 사진"
-                                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                                />
-                            ) : (
-                                <Camera size={36} style={{ color: 'rgba(255,255,255,0.25)' }} />
+                {teams.length > 0 && (
+                    <>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px' }}>
+                            <h2 style={{ fontSize: '2rem' }}>
+                                <span style={{ color: 'var(--accent)' }}>내 팀</span> 정보 수정
+                            </h2>
+                            {saved && (
+                                <motion.div initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }}
+                                    style={{
+                                        background: 'rgba(0, 242, 150, 0.15)', border: '1px solid rgba(0,242,150,0.4)',
+                                        borderRadius: '10px', padding: '8px 18px', color: '#00f296', fontWeight: '600', fontSize: '0.9rem'
+                                    }}>
+                                    ✓ 저장 완료!
+                                </motion.div>
                             )}
                         </div>
 
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                            <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', margin: 0 }}>
-                                JPG, PNG, WEBP · 최대 5MB
-                            </p>
-                            <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', alignItems: 'center' }}>
-                                <label style={{
-                                    display: 'inline-flex', alignItems: 'center', gap: '7px',
-                                    background: 'rgba(255,255,255,0.07)',
-                                    border: '1px solid rgba(255,255,255,0.15)',
-                                    borderRadius: '10px', padding: '9px 18px',
-                                    cursor: 'pointer', fontWeight: '600', fontSize: '0.88rem',
-                                    transition: 'all 0.2s',
+                        {/* 팀 사진 변경 섹션 */}
+                        <div style={{
+                            marginBottom: '32px',
+                            padding: '28px',
+                            background: 'rgba(255,255,255,0.03)',
+                            border: '1px solid rgba(255,255,255,0.08)',
+                            borderRadius: '16px',
+                        }}>
+                            <h3 style={{ fontSize: '1rem', fontWeight: '700', marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                <Camera size={18} style={{ color: 'var(--accent)' }} />
+                                팀 사진
+                            </h3>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '28px', flexWrap: 'wrap' }}>
+                                {/* 현재 사진 */}
+                                <div style={{
+                                    width: '110px', height: '110px', borderRadius: '50%',
+                                    background: 'rgba(255,255,255,0.06)',
+                                    border: '2px solid rgba(255,255,255,0.12)',
+                                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                    overflow: 'hidden', flexShrink: 0,
                                 }}>
-                                    <Upload size={15} />
-                                    사진 선택
-                                    <input
-                                        type="file"
-                                        accept="image/jpeg,image/png,image/webp"
-                                        style={{ display: 'none' }}
-                                        onChange={handlePhotoChange}
-                                    />
-                                </label>
+                                    {(photoPreview || (currentTeam?.photo_url && !currentTeam.photo_url.startsWith('blob:'))) ? (
+                                        <img
+                                            src={photoPreview || currentTeam.photo_url}
+                                            alt="팀 사진"
+                                            style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                                        />
+                                    ) : (
+                                        <Camera size={36} style={{ color: 'rgba(255,255,255,0.25)' }} />
+                                    )}
+                                </div>
 
-                                {photoFile && (
-                                    <button
-                                        type="button"
-                                        onClick={handlePhotoUpload}
-                                        disabled={uploadingPhoto}
-                                        style={{
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                                    <p style={{ fontSize: '0.82rem', color: 'var(--text-muted)', margin: 0 }}>
+                                        JPG, PNG, WEBP · 최대 5MB
+                                    </p>
+                                    <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', alignItems: 'center' }}>
+                                        <label style={{
                                             display: 'inline-flex', alignItems: 'center', gap: '7px',
-                                            background: 'linear-gradient(135deg, var(--accent), #00c9ff)',
-                                            border: 'none', borderRadius: '10px',
-                                            padding: '9px 20px', cursor: 'pointer',
-                                            color: '#000', fontWeight: '700', fontSize: '0.88rem',
-                                        }}
-                                    >
-                                        <Save size={14} />
-                                        {uploadingPhoto ? '업로드 중...' : '저장하기'}
-                                    </button>
-                                )}
+                                            background: 'rgba(255,255,255,0.07)',
+                                            border: '1px solid rgba(255,255,255,0.15)',
+                                            borderRadius: '10px', padding: '9px 18px',
+                                            cursor: 'pointer', fontWeight: '600', fontSize: '0.88rem',
+                                            transition: 'all 0.2s',
+                                        }}>
+                                            <Upload size={15} />
+                                            사진 선택
+                                            <input
+                                                type="file"
+                                                accept="image/jpeg,image/png,image/webp"
+                                                style={{ display: 'none' }}
+                                                onChange={handlePhotoChange}
+                                            />
+                                        </label>
 
-                                {photoSaved && (
-                                    <span style={{
-                                        display: 'inline-flex', alignItems: 'center', gap: '5px',
-                                        color: '#00f296', fontWeight: '600', fontSize: '0.88rem',
-                                    }}>
-                                        <Check size={14} /> 사진 저장 완료!
-                                    </span>
-                                )}
+                                        {photoFile && (
+                                            <button
+                                                type="button"
+                                                onClick={handlePhotoUpload}
+                                                disabled={uploadingPhoto}
+                                                style={{
+                                                    display: 'inline-flex', alignItems: 'center', gap: '7px',
+                                                    background: 'linear-gradient(135deg, var(--accent), #00c9ff)',
+                                                    border: 'none', borderRadius: '10px',
+                                                    padding: '9px 20px', cursor: 'pointer',
+                                                    color: '#000', fontWeight: '700', fontSize: '0.88rem',
+                                                }}
+                                            >
+                                                <Save size={14} />
+                                                {uploadingPhoto ? '업로드 중...' : '저장하기'}
+                                            </button>
+                                        )}
+
+                                        {photoSaved && (
+                                            <span style={{
+                                                display: 'inline-flex', alignItems: 'center', gap: '5px',
+                                                color: '#00f296', fontWeight: '600', fontSize: '0.88rem',
+                                            }}>
+                                                <Check size={14} /> 사진 저장 완료!
+                                            </span>
+                                        )}
+                                    </div>
+                                </div>
                             </div>
                         </div>
-                    </div>
-                </div>
 
-                <form onSubmit={handleSave}>
+                        <form onSubmit={handleSave}>
 
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '25px' }}>
-                        {/* 팀명 */}
-                        <div>
-                            <label>팀 명</label>
-                            <input type="text" value={formData.name}
-                                onChange={e => setFormData({ ...formData, name: e.target.value })} required />
-                        </div>
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '25px' }}>
+                                {/* 팀명 */}
+                                <div>
+                                    <label>팀 명</label>
+                                    <input type="text" value={formData.name}
+                                        onChange={e => setFormData({ ...formData, name: e.target.value })} required />
+                                </div>
 
-                        {/* 창단년도 */}
-                        <div>
-                            <label>팀 설립연도</label>
-                            <select value={formData.foundation_year}
-                                onChange={e => setFormData({ ...formData, foundation_year: e.target.value })}>
-                                {Array.from({ length: 51 }, (_, i) => new Date().getFullYear() - i).map(y => (
-                                    <option key={y} value={y}>{y}년</option>
-                                ))}
-                            </select>
-                        </div>
+                                {/* 창단년도 */}
+                                <div>
+                                    <label>팀 설립연도</label>
+                                    <select value={formData.foundation_year}
+                                        onChange={e => setFormData({ ...formData, foundation_year: e.target.value })}>
+                                        {Array.from({ length: 51 }, (_, i) => new Date().getFullYear() - i).map(y => (
+                                            <option key={y} value={y}>{y}년</option>
+                                        ))}
+                                    </select>
+                                </div>
 
-                        {/* 매칭 유형 */}
-                        <div>
-                            <label>선호 매칭 유형</label>
-                            <select value={formData.match_type}
-                                onChange={e => setFormData({ ...formData, match_type: e.target.value })}>
-                                <option value="soccer">⚽ 축구 매칭</option>
-                                <option value="futsal">🏃 풋살 매칭</option>
-                            </select>
-                        </div>
+                                {/* 매칭 유형 */}
+                                <div>
+                                    <label>선호 매칭 유형</label>
+                                    <select value={formData.match_type}
+                                        onChange={e => setFormData({ ...formData, match_type: e.target.value })}>
+                                        <option value="soccer">⚽ 축구 매칭</option>
+                                        <option value="futsal">🏃 풋살 매칭</option>
+                                    </select>
+                                </div>
 
-                        {/* 실력 */}
-                        <div>
-                            <label>팀 실력</label>
-                            <select value={formData.skill_level}
-                                onChange={e => setFormData({ ...formData, skill_level: e.target.value })}>
-                                {SKILL_LEVELS.map(l => <option key={l} value={l}>{l}</option>)}
-                            </select>
-                        </div>
+                                {/* 실력 */}
+                                <div>
+                                    <label>팀 실력</label>
+                                    <select value={formData.skill_level}
+                                        onChange={e => setFormData({ ...formData, skill_level: e.target.value })}>
+                                        {SKILL_LEVELS.map(l => <option key={l} value={l}>{l}</option>)}
+                                    </select>
+                                </div>
 
-                        {/* 선출 */}
-                        <div>
-                            <label>선수 출신 인원</label>
-                            <select value={formData.pro_players}
-                                onChange={e => setFormData({ ...formData, pro_players: e.target.value })}>
-                                {[...Array(21).keys()].map(n => <option key={n} value={n}>{n}명</option>)}
-                            </select>
-                        </div>
+                                {/* 선출 */}
+                                <div>
+                                    <label>선수 출신 인원</label>
+                                    <select value={formData.pro_players}
+                                        onChange={e => setFormData({ ...formData, pro_players: e.target.value })}>
+                                        {[...Array(21).keys()].map(n => <option key={n} value={n}>{n}명</option>)}
+                                    </select>
+                                </div>
 
-                        {/* 구장 */}
-                        <div>
-                            <label>정기 구장 보유 여부</label>
-                            <select value={formData.has_field}
-                                onChange={e => setFormData({ ...formData, has_field: e.target.value })}>
-                                <option value="true">정기 구장 있음</option>
-                                <option value="false">구장 없음 (떠돌이 팀)</option>
-                            </select>
-                        </div>
+                                {/* 구장 */}
+                                <div>
+                                    <label>정기 구장 보유 여부</label>
+                                    <select value={formData.has_field}
+                                        onChange={e => setFormData({ ...formData, has_field: e.target.value })}>
+                                        <option value="true">정기 구장 있음</option>
+                                        <option value="false">구장 없음 (떠돌이 팀)</option>
+                                    </select>
+                                </div>
 
-                        {/* 연락처 */}
-                        <div style={{ gridColumn: 'span 2' }}>
-                            <label>연락처 (대표번호)</label>
-                            <input type="tel" placeholder="010-0000-0000" value={formData.contact}
-                                onChange={e => setFormData({ ...formData, contact: e.target.value })} required />
-                        </div>
+                                {/* 연락처 */}
+                                <div style={{ gridColumn: 'span 2' }}>
+                                    <label>연락처 (대표번호)</label>
+                                    <input type="tel" placeholder="010-0000-0000" value={formData.contact}
+                                        onChange={e => setFormData({ ...formData, contact: e.target.value })} required />
+                                </div>
 
-                        {/* 지역 */}
-                        <div style={{ gridColumn: 'span 2', display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: '15px' }}>
-                            <label style={{ gridColumn: 'span 3' }}>주 활동 지역</label>
-                            <select value={formData.city}
-                                onChange={e => setFormData(p => ({ ...p, city: e.target.value, district: '전체', dong: '전체' }))}>
-                                {Object.keys(REGIONS_DATA).map(c => <option key={c} value={c}>{c}</option>)}
-                            </select>
-                            <select value={formData.district}
-                                onChange={e => setFormData(p => ({ ...p, district: e.target.value, dong: '전체' }))}>
-                                <option value="전체">전체 시/군/구</option>
-                                {REGIONS_DATA[formData.city] && Object.keys(REGIONS_DATA[formData.city]).map(d => (
-                                    <option key={d} value={d}>{d}</option>
-                                ))}
-                            </select>
-                            <select value={formData.dong}
-                                onChange={e => setFormData(p => ({ ...p, dong: e.target.value }))}>
-                                <option value="전체">전체 읍/면/동</option>
-                                {REGIONS_DATA[formData.city]?.[formData.district]?.map(d => (
-                                    <option key={d} value={d}>{d}</option>
-                                ))}
-                            </select>
-                        </div>
+                                {/* 지역 */}
+                                <div style={{ gridColumn: 'span 2', display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: '15px' }}>
+                                    <label style={{ gridColumn: 'span 3' }}>주 활동 지역</label>
+                                    <select value={formData.city}
+                                        onChange={e => setFormData(p => ({ ...p, city: e.target.value, district: '전체', dong: '전체' }))}>
+                                        {Object.keys(REGIONS_DATA).map(c => <option key={c} value={c}>{c}</option>)}
+                                    </select>
+                                    <select value={formData.district}
+                                        onChange={e => setFormData(p => ({ ...p, district: e.target.value, dong: '전체' }))}>
+                                        <option value="전체">전체 시/군/구</option>
+                                        {REGIONS_DATA[formData.city] && Object.keys(REGIONS_DATA[formData.city]).map(d => (
+                                            <option key={d} value={d}>{d}</option>
+                                        ))}
+                                    </select>
+                                    <select value={formData.dong}
+                                        onChange={e => setFormData(p => ({ ...p, dong: e.target.value }))}>
+                                        <option value="전체">전체 읍/면/동</option>
+                                        {REGIONS_DATA[formData.city]?.[formData.district]?.map(d => (
+                                            <option key={d} value={d}>{d}</option>
+                                        ))}
+                                    </select>
+                                </div>
 
-                        {/* 팀 소개 */}
-                        <div style={{ gridColumn: 'span 2' }}>
-                            <label>팀 소개</label>
-                            <textarea rows="5" value={formData.intro}
-                                onChange={e => setFormData({ ...formData, intro: e.target.value })} required />
-                        </div>
-                    </div>
+                                {/* 팀 소개 */}
+                                <div style={{ gridColumn: 'span 2' }}>
+                                    <label>팀 소개</label>
+                                    <textarea rows="5" value={formData.intro}
+                                        onChange={e => setFormData({ ...formData, intro: e.target.value })} required />
+                                </div>
+                            </div>
 
-                    <button type="submit" className="btn-primary"
-                        style={{ width: '100%', marginTop: '30px', padding: '18px', fontSize: '1.1rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px' }}
-                        disabled={saving}>
-                        <Save size={18} />
-                        {saving ? '저장 중...' : '변경사항 저장'}
-                    </button>
-                </form>
+                            <button type="submit" className="btn-primary"
+                                style={{ width: '100%', marginTop: '30px', padding: '18px', fontSize: '1.1rem', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px' }}
+                                disabled={saving}>
+                                <Save size={18} />
+                                {saving ? '저장 중...' : '변경사항 저장'}
+                            </button>
+                        </form>
+                    </>
+                )}
             </motion.div>
         </div>
     );
