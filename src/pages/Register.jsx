@@ -7,17 +7,18 @@ import { useAuth } from '../context/AuthContext';
 const Register = () => {
     const { user } = useAuth();
     const [formData, setFormData] = useState({
-        teamName: '',
-        matchType: 'soccer',
-        hasField: 'false',
+        name: '',
+        match_type: 'soccer',
+        has_field: 'false',
         address: '',
-        proPlayers: '0',
-        skillLevel: '중',
-        introduction: '',
+        pro_players: '0',
+        skill_level: '중',
+        intro: '',
         contact: '',
         dong: '역삼동',
-        foundationYear: new Date().getFullYear(),
-        profileImage: null,
+        foundation_year: new Date().getFullYear(),
+        photoFile: null,
+        photoPreview: null,
         email: '',
         password: '',
         passwordConfirm: ''
@@ -26,7 +27,7 @@ const Register = () => {
     const currentRegion = `${formData.city} ${formData.district === '전체' ? '' : formData.district} ${formData.dong === '전체' ? '' : formData.dong}`.trim();
 
     const autoPhrases = [
-        `저희는 ${formData.matchType === 'soccer' ? '축구' : '풋살'}을 정말 사랑하는 팀입니다! ⚽`,
+        `저희는 ${formData.match_type === 'soccer' ? '축구' : '풋살'}을 정말 사랑하는 팀입니다! ⚽`,
         "매너가 매우 좋습니다! 서로 존중하며 즐거운 경기 하고 싶어요. 😊",
         "실력이 낮은 편이라 정말 순수하게 즐기실 팀들만 신청 부탁드려요.",
         "선출들이 조금 포함된 팀이라 어느 정도 수준이 맞는 팀과 경기하고 싶습니다.",
@@ -38,7 +39,7 @@ const Register = () => {
 
     const getAvailableSkillLevels = () => {
         const levels = ['최상', '상', '중', '하', '하하', '하하하', '하하하하', '하하하하하'];
-        if (parseInt(formData.proPlayers) > 0) {
+        if (parseInt(formData.pro_players) > 0) {
             return levels.slice(0, 4);
         }
         return levels;
@@ -47,7 +48,7 @@ const Register = () => {
     const handleAddPhrase = (phrase) => {
         setFormData(prev => ({
             ...prev,
-            introduction: prev.introduction ? `${prev.introduction}\n${phrase}` : phrase
+            intro: prev.intro ? `${prev.intro}\n${phrase}` : phrase
         }));
     };
 
@@ -56,11 +57,11 @@ const Register = () => {
         const availableLevels = ['최상', '상', '중', '하'];
 
         setFormData(prev => {
-            let nextSkill = prev.skillLevel;
-            if (parseInt(proCount) > 0 && !availableLevels.includes(prev.skillLevel)) {
+            let nextSkill = prev.skill_level;
+            if (parseInt(proCount) > 0 && !availableLevels.includes(prev.skill_level)) {
                 nextSkill = '하';
             }
-            return { ...prev, proPlayers: proCount, skillLevel: nextSkill };
+            return { ...prev, pro_players: proCount, skill_level: nextSkill };
         });
     };
 
@@ -102,6 +103,23 @@ const Register = () => {
         document.getElementById('daumPostcodeLayer').style.display = 'none';
     };
 
+    const handlePhotoUpload = async (file, teamId) => {
+        if (!file) return null;
+        const ext = file.name.split('.').pop();
+        const filePath = `team-photos/${teamId}.${ext}`;
+        const { error: uploadError } = await supabase.storage
+            .from('team-photos')
+            .upload(filePath, file, { upsert: true });
+
+        if (uploadError) throw uploadError;
+
+        const { data: { publicUrl } } = supabase.storage
+            .from('team-photos')
+            .getPublicUrl(filePath);
+
+        return publicUrl;
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
 
@@ -131,30 +149,45 @@ const Register = () => {
                 userId = authData.user?.id;
             }
 
-            // 2. 팀 데이터 저장
-            const newTeam = {
-                name: formData.teamName,
-                match_type: formData.matchType,
-                has_field: formData.hasField === 'true',
+            // 2. 팀 데이터 저장 (임시로 먼저 생성해서 ID 확보)
+            const tempTeam = {
+                name: formData.name,
+                match_type: formData.match_type,
+                has_field: formData.has_field === 'true',
                 address: formData.address || '-',
                 city: formData.city,
                 district: formData.district,
                 dong: formData.dong,
-                pro_players: parseInt(formData.proPlayers),
-                skill_level: formData.skillLevel,
-                intro: formData.introduction,
+                pro_players: parseInt(formData.pro_players),
+                skill_level: formData.skill_level,
+                intro: formData.intro,
                 contact: formData.contact,
-                foundation_year: parseInt(formData.foundationYear),
-                profile_image: formData.profileImage,
+                foundation_year: parseInt(formData.foundation_year),
                 region: region,
                 member_count: 20,
-                user_id: userId
+                user_id: userId,
+                photo_url: null
             };
 
-            const { error: teamError } = await supabase.from('teams').insert([newTeam]);
+            const { data: teamData, error: teamError } = await supabase
+                .from('teams')
+                .insert([tempTeam])
+                .select()
+                .single();
+
             if (teamError) throw teamError;
 
-            localStorage.setItem('myTeamInfo', JSON.stringify({ ...newTeam, id: Date.now() }));
+            // 3. 사진 업로드 및 URL 업데이트 (사진이 있는 경우)
+            if (formData.photoFile && teamData) {
+                const photoUrl = await handlePhotoUpload(formData.photoFile, teamData.id);
+                await supabase
+                    .from('teams')
+                    .update({ photo_url: photoUrl })
+                    .eq('id', teamData.id);
+                tempTeam.photo_url = photoUrl;
+            }
+
+            localStorage.setItem('myTeamInfo', JSON.stringify({ ...tempTeam, id: teamData.id }));
             alert(`팀 등록이 완료되었습니다!\n이제 '매칭 신청' 페이지에서 우리 팀을 확인할 수 있습니다.`);
             window.location.href = '/matches';
         } catch (error) {
@@ -213,15 +246,15 @@ const Register = () => {
                         <label style={{ marginBottom: '15px', display: 'block' }}>선호 매칭 유형 선택</label>
                         <div className="match-type-row">
                             <label className="glass-card match-type-card" style={{
-                                background: formData.matchType === 'soccer' ? 'rgba(52, 152, 219, 0.2)' : 'rgba(255,255,255,0.05)',
-                                borderColor: formData.matchType === 'soccer' ? 'var(--accent)' : 'rgba(255,255,255,0.1)',
+                                background: formData.match_type === 'soccer' ? 'rgba(52, 152, 219, 0.2)' : 'rgba(255,255,255,0.05)',
+                                borderColor: formData.match_type === 'soccer' ? 'var(--accent)' : 'rgba(255,255,255,0.1)',
                             }}>
                                 <input
                                     type="radio"
-                                    name="matchType"
+                                    name="match_type"
                                     value="soccer"
-                                    checked={formData.matchType === 'soccer'}
-                                    onChange={(e) => setFormData({ ...formData, matchType: e.target.value })}
+                                    checked={formData.match_type === 'soccer'}
+                                    onChange={(e) => setFormData({ ...formData, match_type: e.target.value })}
                                     style={{ width: 'auto' }}
                                 />
                                 <div>
@@ -230,15 +263,15 @@ const Register = () => {
                                 </div>
                             </label>
                             <label className="glass-card match-type-card" style={{
-                                background: formData.matchType === 'futsal' ? 'rgba(52, 152, 219, 0.2)' : 'rgba(255,255,255,0.05)',
-                                borderColor: formData.matchType === 'futsal' ? 'var(--accent)' : 'rgba(255,255,255,0.1)',
+                                background: formData.match_type === 'futsal' ? 'rgba(52, 152, 219, 0.2)' : 'rgba(255,255,255,0.05)',
+                                borderColor: formData.match_type === 'futsal' ? 'var(--accent)' : 'rgba(255,255,255,0.1)',
                             }}>
                                 <input
                                     type="radio"
-                                    name="matchType"
+                                    name="match_type"
                                     value="futsal"
-                                    checked={formData.matchType === 'futsal'}
-                                    onChange={(e) => setFormData({ ...formData, matchType: e.target.value })}
+                                    checked={formData.match_type === 'futsal'}
+                                    onChange={(e) => setFormData({ ...formData, match_type: e.target.value })}
                                     style={{ width: 'auto' }}
                                 />
                                 <div>
@@ -253,21 +286,21 @@ const Register = () => {
                         <label>팀 명</label>
                         <input
                             type="text"
-                            placeholder="우리 팀 이름을 입력하세요"
-                            value={formData.teamName}
-                            onChange={(e) => setFormData({ ...formData, teamName: e.target.value })}
+                            placeholder="멋진 팀 이름을 입력하세요"
+                            value={formData.name}
+                            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                             required
                         />
                     </div>
 
                     <div>
-                        <label>팀 설립연도</label>
+                        <label>팀 설립 연도</label>
                         <select
-                            value={formData.foundationYear}
-                            onChange={(e) => setFormData({ ...formData, foundationYear: e.target.value })}
+                            value={formData.foundation_year}
+                            onChange={(e) => setFormData({ ...formData, foundation_year: e.target.value })}
                         >
-                            {Array.from({ length: 51 }, (_, i) => new Date().getFullYear() - i).map(year => (
-                                <option key={year} value={year}>{year}년</option>
+                            {Array.from({ length: 51 }, (_, i) => new Date().getFullYear() - i).map(y => (
+                                <option key={y} value={y}>{y}년</option>
                             ))}
                         </select>
                     </div>
@@ -293,13 +326,18 @@ const Register = () => {
                                 accept="image/*"
                                 style={{ display: 'none' }}
                                 onChange={(e) => {
-                                    if (e.target.files[0]) {
-                                        setFormData({ ...formData, profileImage: URL.createObjectURL(e.target.files[0]) });
+                                    const file = e.target.files[0];
+                                    if (file) {
+                                        setFormData({
+                                            ...formData,
+                                            photoFile: file,
+                                            photoPreview: URL.createObjectURL(file)
+                                        });
                                     }
                                 }}
                             />
-                            {formData.profileImage ? (
-                                <img src={formData.profileImage} alt="Preview" style={{ maxWidth: '100%', maxHeight: '200px', borderRadius: '10px' }} />
+                            {formData.photoPreview ? (
+                                <img src={formData.photoPreview} alt="Preview" style={{ maxWidth: '100%', maxHeight: '200px', borderRadius: '10px' }} />
                             ) : (
                                 <div style={{ color: 'var(--text-muted)' }}>
                                     <div style={{ fontSize: '2rem', marginBottom: '10px' }}>📸</div>
@@ -312,15 +350,15 @@ const Register = () => {
                     <div>
                         <label>정기 구장 보유 여부</label>
                         <select
-                            value={formData.hasField}
-                            onChange={(e) => setFormData({ ...formData, hasField: e.target.value })}
+                            value={formData.has_field}
+                            onChange={(e) => setFormData({ ...formData, has_field: e.target.value })}
                         >
-                            <option value="true">정기 구장 있음</option>
-                            <option value="false">구장 없음 (떠돌이 팀)</option>
+                            <option value="true">있음 (홈 경기 가능)</option>
+                            <option value="false">없음 (떠돌이 팀)</option>
                         </select>
                     </div>
 
-                    {formData.hasField === 'true' ? (
+                    {formData.has_field === 'true' ? (
                         <div className="register-col-2">
                             <label>구장 위치 (주소)</label>
                             <div className="address-row">
@@ -389,20 +427,20 @@ const Register = () => {
                     <div>
                         <label>선수 출신 인원 (고교 출신 이상 포함)</label>
                         <select
-                            value={formData.proPlayers}
+                            value={formData.pro_players}
                             onChange={handleProPlayerChange}
                         >
-                            {[...Array(100).keys()].map(num => (
+                            {[...Array(21).keys()].map(num => (
                                 <option key={num} value={num}>{num}명</option>
                             ))}
                         </select>
                     </div>
 
                     <div>
-                        <label>팀 실력</label>
+                        <label>팀 실력 등급</label>
                         <select
-                            value={formData.skillLevel}
-                            onChange={(e) => setFormData({ ...formData, skillLevel: e.target.value })}
+                            value={formData.skill_level}
+                            onChange={(e) => setFormData({ ...formData, skill_level: e.target.value })}
                         >
                             {getAvailableSkillLevels().map(level => (
                                 <option key={level} value={level}>{level}</option>
@@ -436,13 +474,16 @@ const Register = () => {
                                 </button>
                             ))}
                         </div>
-                        <textarea
-                            rows="5"
-                            placeholder="우리 팀을 자유롭게 소개해 주세요."
-                            value={formData.introduction}
-                            onChange={(e) => setFormData({ ...formData, introduction: e.target.value })}
-                            required
-                        ></textarea>
+                        <div style={{ gridColumn: 'span 2' }}>
+                            <label>팀 소개 및 공지 (직접 입력)</label>
+                            <textarea
+                                rows="8"
+                                placeholder="우리 팀에 대해 자유롭게 소개해 주세요! (예: 주로 활동하는 시간대, 지향하는 매너, 선출 유무 등)"
+                                value={formData.intro}
+                                onChange={(e) => setFormData({ ...formData, intro: e.target.value })}
+                                required
+                            />
+                        </div>
                     </div>
 
                     {/* 계정 생성 섹션 (비로그인 상태일 때만 표시) */}

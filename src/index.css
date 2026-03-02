@@ -496,48 +496,149 @@ label {
 .seo-section {
   width: 100%;
   max-width: 1100px;
-  margin-top: 80px;
-  padding: 40px 0 20px 0;
-  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  margin-top: 60px;
+  padding: 40px 20px 20px 20px;
+  border-top: 1px solid rgba(186, 150, 83, 0.15);
+}
+
+.seo-section-title {
+  text-align: center;
+  font-size: 1.1rem !important;
+  font-weight: 700;
+  color: var(--secondary);
+  margin-bottom: 24px;
+  letter-spacing: 1px;
 }
 
 .seo-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 30px;
+  gap: 20px;
+}
+
+.seo-block {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(186, 150, 83, 0.12);
+  border-radius: 16px;
+  padding: 24px 20px;
+  transition: border-color 0.3s ease;
+}
+
+.seo-block:hover {
+  border-color: rgba(186, 150, 83, 0.3);
 }
 
 .seo-block h2 {
-  font-size: 1rem !important;
+  font-size: 0.95rem !important;
   font-weight: 700;
   color: var(--secondary);
   margin-bottom: 12px;
   letter-spacing: 0;
+  line-height: 1.4;
 }
 
 .seo-block p {
   font-size: 0.82rem !important;
   color: var(--text-muted);
-  line-height: 1.75;
+  line-height: 1.8;
   padding: 0 !important;
+  word-break: keep-all;
 }
 
+/* 강조 텍스트 - 골드 컬러 + 볼드 */
 .seo-block strong {
-  color: rgba(255, 255, 255, 0.6);
-  font-weight: 600;
+  color: var(--secondary);
+  font-weight: 700;
+  background: rgba(186, 150, 83, 0.12);
+  padding: 1px 4px;
+  border-radius: 4px;
+}
+
+/* 전국 지역 섹션 - full width 블록 */
+.seo-block-full {
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(186, 150, 83, 0.12);
+  border-radius: 16px;
+  padding: 24px 28px;
+  width: 100%;
+  transition: border-color 0.3s ease;
+}
+
+.seo-block-full h2 {
+  font-size: 1rem !important;
+  font-weight: 700;
+  color: var(--secondary);
+  margin-bottom: 14px;
+  text-align: center;
+  letter-spacing: 0;
+}
+
+.seo-block-full p {
+  font-size: 0.82rem !important;
+  color: var(--text-muted);
+  line-height: 1.85;
+  padding: 0 !important;
+  word-break: keep-all;
+  text-align: center;
+}
+
+.seo-block-full strong {
+  color: var(--secondary);
+  font-weight: 700;
+  background: rgba(186, 150, 83, 0.12);
+  padding: 1px 4px;
+  border-radius: 4px;
+}
+
+/* FAQ 타이틀 블록 */
+.seo-faq-title {
+  text-align: center;
+  font-size: 1.05rem !important;
+  font-weight: 700;
+  color: var(--secondary);
+  margin-bottom: 20px;
+  letter-spacing: 1px;
+}
+
+@media (max-width: 900px) {
+  .seo-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
 }
 
 @media (max-width: 768px) {
-  .seo-grid {
-    grid-template-columns: 1fr;
-    gap: 20px;
+  .seo-section {
+    margin-top: 40px;
+    padding: 28px 16px 12px 16px;
   }
 
-  .seo-section {
-    margin-top: 50px;
-    padding: 24px 0 10px 0;
+  .seo-grid {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+
+  .seo-block,
+  .seo-block-full {
+    padding: 18px 16px;
+  }
+
+  .seo-block h2,
+  .seo-block-full h2 {
+    font-size: 0.9rem !important;
+  }
+
+  .seo-block p,
+  .seo-block-full p {
+    font-size: 0.8rem !important;
+    text-align: left;
+  }
+
+  .seo-block-full h2 {
+    text-align: left;
   }
 }
+
 
 /* ===== Register Page Layout Classes ===== */
 .register-card {

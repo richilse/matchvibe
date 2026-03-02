@@ -20,7 +20,9 @@ const Login = () => {
         if (error) {
             setError('이메일 또는 비밀번호가 올바르지 않습니다.');
         } else {
-            navigate('/');
+            // 이전 페이지가 있으면 돌아가고, 없으면 내 팀 페이지로
+            const from = new URLSearchParams(window.location.search).get('from');
+            navigate(from || '/my-team');
         }
         setLoading(false);
     };

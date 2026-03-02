@@ -15,7 +15,7 @@ const ForgotPassword = () => {
         setLoading(true);
 
         const { error } = await supabase.auth.resetPasswordForEmail(email, {
-            redirectTo: `${window.location.origin}/reset-password`,
+            redirectTo: 'https://matchvibe-soccer.vercel.app/reset-password',
         });
 
         if (error) {

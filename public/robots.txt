@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://matchvibe-soccermatching.netlify.app/sitemap.xml
+Sitemap: https://matchvibe-soccer.vercel.app/sitemap.xml

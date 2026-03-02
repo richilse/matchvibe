@@ -4,6 +4,7 @@ import { Trash2 } from 'lucide-react';
 import { REGIONS_DATA } from '../constants/regions';
 import { supabase } from '../lib/supabaseClient';
 import { useAuth } from '../context/AuthContext';
+import { sendSMS } from '../lib/solapi';
 
 const MatchFinder = () => {
     const { user, isAdmin } = useAuth();
@@ -17,6 +18,7 @@ const MatchFinder = () => {
     const [matchingRequested, setMatchingRequested] = useState(null);
     const [showLinkageToast, setShowLinkageToast] = useState(false);
     const [selectedTeam, setSelectedTeam] = useState(null);
+    const [sending, setSending] = useState(false);
 
     // Load teams from Supabase on mount
     useEffect(() => {
@@ -63,24 +65,56 @@ const MatchFinder = () => {
 
         if (filter.district !== '전체' && !team.region.includes(filter.district)) return false;
         if (filter.dong !== '전체' && !team.region.includes(filter.dong)) return false;
-        if (filter.skill !== '전체' && team.skill !== filter.skill && team.skillLevel !== filter.skill) return false;
+        if (filter.skill !== '전체' && team.skill !== filter.skill && team.skill_level !== filter.skill) return false;
 
         return true;
     });
 
-    const handleMatchRequest = (team) => {
+    const handleMatchRequest = async (team) => {
         const savedTeam = localStorage.getItem('myTeamInfo');
-        const myTeamName = savedTeam ? JSON.parse(savedTeam).teamName : '우리 팀';
+        const myTeamParsed = savedTeam ? JSON.parse(savedTeam) : null;
+        const myTeamName = myTeamParsed?.teamName || myTeamParsed?.name || '우리 팀';
+        const myTeamRegion = myTeamParsed?.region || '';
+        const myTeamContact = myTeamParsed?.contact || '';
 
         const confirmMsg = `[매치바이브] ${team.name} 팀에게 매칭 신청을 하시겠습니까?\n\n"${myTeamName}" 팀의 정보와 함께 상대방에게 매칭 신청 문자가 즉시 전송됩니다.`;
 
-        if (window.confirm(confirmMsg)) {
-            setMatchingRequested(team.id);
-            setTimeout(() => {
-                alert(`신청 완료! ${team.name} 팀 매니저에게 문자가 전송되었습니다.\n\n[전송된 내용]\n"축구 매칭 앱 '매치바이브'에서 ${myTeamName} 팀이 매칭을 신청했습니다. 상대 팀 정보를 확인해 보세요!"`);
-            }, 500);
+        if (!window.confirm(confirmMsg)) return;
+
+        setSending(true);
+        setMatchingRequested(team.id);
+
+        try {
+            // 1. Supabase에 신청 기록 저장 (B팀이 수락/거절 시 A팀에게 문자 보내기 위해)
+            const { error: insertError } = await supabase.from('match_requests').insert([{
+                from_team_id: user?.id || null,
+                from_team_name: myTeamName,
+                from_team_contact: myTeamContact,
+                from_team_region: myTeamRegion,
+                to_team_id: team.id,
+                to_team_name: team.name,
+                status: 'pending'
+            }]);
+            if (insertError) console.error('신청 기록 저장 오류:', insertError.message);
+
+            // 2. B팀에게 SMS 발송
+            if (team.contact) {
+                const smsText = `[매치바이브] ${team.name} 팀 매니저님!\n\n"${myTeamName}"${myTeamRegion ? ` (${myTeamRegion})` : ''} 팀으로부터 매칭 신청이 들어왔습니다.\n\n매치바이브 > 내 팀에서 수락/거절하세요!\nhttps://matchvibe-soccer.vercel.app/my-team`;
+
+                await sendSMS(team.contact, smsText);
+                alert(`✅ 신청 완료!\n\n${team.name} 팀 매니저에게 문자가 전송되었습니다.`);
+            } else {
+                alert(`✅ 신청이 접수되었습니다.\n\n${team.name} 팀에 등록된 연락처가 없어 문자는 발송되지 않았습니다.`);
+            }
+        } catch (error) {
+            console.error('매칭 신청 오류:', error);
+            alert(`신청은 완료되었으나 문자 발송에 실패했습니다.\n직접 연락해보세요: ${team.contact || '연락처 없음'}`);
+        } finally {
+            setSending(false);
         }
     };
+
+
 
     const handleDeleteTeam = async (team) => {
         const confirmed = window.confirm(`"${team.name}" 팀을 삭제하시겠습니까?\n이 작업은 되돌릴 수 없습니다.`);
@@ -235,9 +269,27 @@ const MatchFinder = () => {
                                 )}
 
                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '15px' }}>
-                                    <div>
-                                        <span style={{ fontSize: '0.8rem', color: 'var(--accent)', fontWeight: '600' }}>{team.region}</span>
-                                        <h3 style={{ fontSize: '1.5rem', marginTop: '5px' }}>{team.name}</h3>
+                                    <div style={{ display: 'flex', gap: '15px', alignItems: 'center' }}>
+                                        {(team.photo_url || team.profile_image) ? (
+                                            <img
+                                                src={team.photo_url || team.profile_image}
+                                                alt={team.name}
+                                                style={{ width: '50px', height: '50px', borderRadius: '50%', objectFit: 'cover', border: '1px solid rgba(255,255,255,0.1)' }}
+                                            />
+                                        ) : (
+                                            <div style={{
+                                                width: '50px', height: '50px', borderRadius: '50%',
+                                                background: 'rgba(255,255,255,0.05)', display: 'flex',
+                                                alignItems: 'center', justifyContent: 'center', fontSize: '1.2rem',
+                                                border: '1px solid rgba(255,255,255,0.1)'
+                                            }}>
+                                                ⚽
+                                            </div>
+                                        )}
+                                        <div>
+                                            <span style={{ fontSize: '0.8rem', color: 'var(--accent)', fontWeight: '600' }}>{team.region}</span>
+                                            <h3 style={{ fontSize: '1.5rem', marginTop: '5px' }}>{team.name}</h3>
+                                        </div>
                                     </div>
                                     <div style={{ textAlign: 'right' }}>
                                         <span style={{
@@ -247,13 +299,13 @@ const MatchFinder = () => {
                                             background: 'rgba(255, 255, 255, 0.1)',
                                             fontSize: '0.8rem'
                                         }}>
-                                            실력: {team.skillLevel || team.skill}
+                                            실력: {team.skill_level || team.skill}
                                         </span>
                                     </div>
                                 </div>
 
                                 <div style={{ display: 'flex', gap: '15px', marginBottom: '20px', fontSize: '0.9rem', color: 'var(--text-muted)' }}>
-                                    <span>선출 {team.proPlayers}명</span>
+                                    <span>선출 {team.pro_players}명</span>
                                     <span>•</span>
                                     <span>{team.hasField ? '홈 경기 가능' : '원정만 가능'}</span>
                                 </div>
@@ -380,42 +432,42 @@ const MatchFinder = () => {
                                 <div style={{
                                     width: '120px',
                                     height: '120px',
-                                    background: 'var(--gold-gradient)',
-                                    borderRadius: '20px',
+                                    background: 'rgba(255,255,255,0.05)',
+                                    borderRadius: '50%',
                                     margin: '0 auto 20px',
                                     display: 'flex',
                                     alignItems: 'center',
                                     justifyContent: 'center',
                                     fontSize: '3rem',
                                     overflow: 'hidden',
-                                    border: '2px solid rgba(255,255,255,0.2)',
-                                    boxShadow: '0 10px 20px rgba(0,0,0,0.3)'
+                                    border: '2px solid rgba(255,255,255,0.1)',
+                                    boxShadow: '0 10px 30px rgba(0,0,0,0.5)'
                                 }}>
-                                    {selectedTeam.profileImage ? (
+                                    {(selectedTeam.photo_url || selectedTeam.profile_image || selectedTeam.profileImage) ? (
                                         <img
-                                            src={selectedTeam.profileImage}
+                                            src={selectedTeam.photo_url || selectedTeam.profile_image || selectedTeam.profileImage}
                                             alt={selectedTeam.name}
                                             style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                                         />
                                     ) : (
                                         <span style={{ fontSize: '3.5rem' }}>
-                                            {selectedTeam.proPlayers > 5 ? '👑' : '⚽'}
+                                            {selectedTeam.pro_players > 5 ? '👑' : '⚽'}
                                         </span>
                                     )}
                                 </div>
                                 <span style={{ color: 'var(--accent)', fontWeight: '600', fontSize: '0.9rem' }}>{selectedTeam.region}</span>
                                 <h2 style={{ fontSize: '2.5rem', marginTop: '10px' }}>{selectedTeam.name}</h2>
-                                <p style={{ color: 'var(--text-muted)', marginTop: '5px' }}>{selectedTeam.foundationYear}년 창단</p>
+                                <p style={{ color: 'var(--text-muted)', marginTop: '5px' }}>{selectedTeam.foundation_year}년 창단</p>
                             </div>
 
                             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '20px', marginBottom: '30px', textAlign: 'center' }}>
                                 <div className="glass-card" style={{ padding: '15px' }}>
                                     <div style={{ color: 'var(--text-muted)', fontSize: '0.8rem', marginBottom: '5px' }}>실력 등급</div>
-                                    <div style={{ fontSize: '1.2rem', fontWeight: 'bold' }}>{selectedTeam.skillLevel || selectedTeam.skill}</div>
+                                    <div style={{ fontSize: '1.2rem', fontWeight: 'bold' }}>{selectedTeam.skill_level || selectedTeam.skill}</div>
                                 </div>
                                 <div className="glass-card" style={{ padding: '15px' }}>
                                     <div style={{ color: 'var(--text-muted)', fontSize: '0.8rem', marginBottom: '5px' }}>선출 인원</div>
-                                    <div style={{ fontSize: '1.2rem', fontWeight: 'bold' }}>{selectedTeam.proPlayers}명</div>
+                                    <div style={{ fontSize: '1.2rem', fontWeight: 'bold' }}>{selectedTeam.pro_players}명</div>
                                 </div>
                                 <div className="glass-card" style={{ padding: '15px' }}>
                                     <div style={{ color: 'var(--text-muted)', fontSize: '0.8rem', marginBottom: '5px' }}>회원 수</div>
